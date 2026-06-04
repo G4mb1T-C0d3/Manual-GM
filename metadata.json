@@ -1,0 +1,6 @@
+{
+  "name": "Cyberpunk Red Combat & Netrunning Tracker",
+  "description": "An interactive, fully automated Cyberpunk Red combat and netrunning tactical planner featuring a hardware-inspired grid layout, custom digital sound synthesizers, rules-compliant rulesets, and turn management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

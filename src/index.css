@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Share Tech Mono", "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Custom Cyberpunk CRT effects & phosphor overlays */
+body {
+  background-color: #06060c;
+  color: #e5e5eb;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom terminal glowing text and components */
+.glow-magenta {
+  text-shadow: 0 0 8px rgba(255, 0, 255, 0.6), 0 0 15px rgba(255, 0, 255, 0.3);
+}
+
+.glow-magenta-xs {
+  box-shadow: 0 0 6px rgba(255, 0, 255, 0.25);
+}
+
+.glow-green {
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.6), 0 0 15px rgba(57, 255, 20, 0.3);
+}
+
+.glow-cyan {
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6), 0 0 12px rgba(0, 255, 255, 0.3);
+}
+
+/* CSS Animated CRT Scanline Sweep */
+.crt-overlay::after {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+  background-size: 100% 4px, 6px 100%;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Pulsing subtle screen flicker */
+@keyframes crt-flicker {
+  0% { opacity: 0.985; }
+  50% { opacity: 0.995; }
+  100% { opacity: 0.985; }
+}
+
+.screen-flicker {
+  animation: crt-flicker 0.18s infinite;
+}
+
+/* Scrollbars for matrix lists */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090912;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff00ff;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ffff;
+}
+
+/* Scanning glowing visual lines */
+@keyframes scanswipe {
+  0% { top: -100%; }
+  100% { top: 100%; }
+}
+
+.scanning-line {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to bottom, rgba(57, 255, 20, 0), rgba(57, 255, 20, 0.75), rgba(57, 255, 20, 0));
+  animation: scanswipe 6s linear infinite;
+  pointer-events: none;
+}
+
+/* Spin animations */
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
