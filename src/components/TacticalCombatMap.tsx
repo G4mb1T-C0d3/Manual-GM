@@ -68,6 +68,29 @@ export default function TacticalCombatMap({
   // Track player cell budget per combat round (local tracking in meters)
   const [playerMovementSpent, setPlayerMovementSpent] = useState<number>(0);
 
+  // Multi-perspective States & Pointer Rotations - Forced to 2D Top-Down View
+  const [viewPerspective] = useState<'top-down' | 'isometric' | '3d'>('top-down');
+  const [cameraAngleX] = useState<number>(0);
+  const [cameraAngleZ] = useState<number>(0);
+  const [isRotatingCamera] = useState<boolean>(false);
+  const pointerStartRef = React.useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+
+  const selectPerspective = (mode: 'top-down' | 'isometric' | '3d') => {
+    // Locked to top-down 2D mode
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // Disabled camera rotation for strict top-down layout
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    // Disabled camera rotation for strict top-down layout
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    // Disabled camera rotation for strict top-down layout
+  };
+
   // Active turn character ID
   const activeCharId = turnOrder[turnIndex] || '';
 
@@ -170,8 +193,12 @@ export default function TacticalCombatMap({
     }
   };
 
-  const resolveNewPropDrop = (name: string, icon: string, tx: number, ty: number) => {
+  const resolveNewPropDrop = (name: string, icon: string, rawTx: number, rawTy: number) => {
     if (!gmOverrideActive) return;
+    
+    // Hard physical boundaries constraint validation
+    const tx = Math.max(1, Math.min(10, rawTx));
+    const ty = Math.max(1, Math.min(10, rawTy));
     
     // Guard coordinates occupancy
     if (getObstacleAt(tx, ty) || 
@@ -197,7 +224,10 @@ export default function TacticalCombatMap({
     audio.playUIBeep();
   };
 
-  const resolveRelocatePropDrop = (sx: number, sy: number, tx: number, ty: number) => {
+  const resolveRelocatePropDrop = (sx: number, sy: number, rawTx: number, rawTy: number) => {
+    const tx = Math.max(1, Math.min(10, rawTx));
+    const ty = Math.max(1, Math.min(10, rawTy));
+    
     if (!gmOverrideActive || (sx === tx && sy === ty)) return;
     
     // Target coordinate empty lookups
@@ -233,7 +263,16 @@ export default function TacticalCombatMap({
     }
   };
 
-  const resolveCharacterTokenDrop = (charId: string, tx: number, ty: number) => {
+  const resolveCharacterTokenDrop = (charId: string, rawTx: number, rawTy: number) => {
+    const tx = Math.max(1, Math.min(10, rawTx));
+    const ty = Math.max(1, Math.min(10, rawTy));
+
+    if (tx < 1 || tx > 10 || ty < 1 || ty > 10) {
+      audio.playAlert();
+      alert("❌ BOUNDARY BREACH: Coordinates out of bounds!");
+      return;
+    }
+
     // Solid obstacles movement prevention checks
     if (getObstacleAt(tx, ty) && !gmOverrideActive) {
       audio.playAlert();
@@ -543,12 +582,13 @@ export default function TacticalCombatMap({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-gray-800 pb-3">
         <div>
           <h3 className="text-xs font-mono font-black text-rose-500 uppercase tracking-widest flex items-center gap-1.5">
-            <Compass className="text-rose-500 animate-spin-slow w-4.5 h-4.5" /> 2.5D RETRO ISOMETRIC VECTOR MAP
+            <Compass className="text-rose-500 animate-spin-slow w-4.5 h-4.5" /> 2D TACTICAL VECTOR GRID MAP
           </h3>
           <p className="text-[9px] text-gray-500 font-mono mt-0.5">Scale: 1 Tile = 2m. Supports live token dragging & GM environmental prop placement.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+
           {/* Calculate distance scanner toggle */}
           <button
             onClick={() => {
@@ -637,7 +677,89 @@ export default function TacticalCombatMap({
         </div>
 
         {/* ISOMETRIC MATRIX VIEWPORT: Right Column */}
-        <div className="md:col-span-3 bg-[#05050c] border border-gray-800 rounded-lg p-2 relative h-[450px] overflow-auto select-none scrollbar-thin">
+        <div 
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onContextMenu={(e) => e.preventDefault()}
+          className="md:col-span-3 bg-[#050512] border border-gray-800 rounded-lg p-2 relative h-[450px] overflow-hidden select-none scrollbar-none cursor-grab active:cursor-grabbing transform-gpu"
+        >
+          
+          {/* Cyberpunk Atmospheric Style Keyframes */}
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes steam-rise {
+              0% { transform: translateY(0px) scale(0.8); opacity: 0; }
+              20% { opacity: 0.18; }
+              80% { opacity: 0.1; }
+              100% { transform: translateY(-60px) scale(1.5); opacity: 0; }
+            }
+            @keyframes smog-sway {
+              0% { transform: translate(-5%, -5%) rotate(0deg); }
+              50% { transform: translate(5%, 5%) rotate(2deg); }
+              100% { transform: translate(-5%, -5%) rotate(0deg); }
+            }
+            @keyframes neon-flicker-bar {
+              0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { 
+                opacity: 1; 
+                text-shadow: 0 0 6px rgba(255, 0, 150, 0.95), 0 0 12px rgba(255, 0, 150, 0.4);
+                border-color: rgba(236, 72, 153, 0.9);
+                color: rgba(253, 244, 255, 1);
+              }
+              20%, 24%, 55% { 
+                opacity: 0.4; 
+                text-shadow: none;
+                border-color: rgba(236, 72, 153, 0.2);
+                color: rgba(236, 72, 153, 0.4);
+              }
+            }
+            @keyframes neon-flicker-side {
+              0%, 9%, 11%, 13%, 20%, 80%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(6, 182, 212, 1); }
+              10%, 12% { opacity: 0.2; text-shadow: none; }
+            }
+            @keyframes rain-slick {
+              0% { background-position: 0px 0px; }
+              100% { background-position: 20px 400px; }
+            }
+            .rain-overlay {
+              background: repeating-linear-gradient(0deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0) 18px, rgba(34,211,238,0.18) 19px, rgba(34,211,238,0.18) 20px);
+              background-size: 200px 400px;
+              animation: rain-slick 0.8s linear infinite;
+            }
+          `}} />
+
+          {/* Rain-slick vertical streaks overlay */}
+          <div className="absolute inset-0 pointer-events-none rain-overlay opacity-35 z-20"></div>
+
+          {/* Flickering Neon Board billboard banner */}
+          <div 
+            className="absolute top-3 left-4 text-[9px] font-mono uppercase bg-black/85 border-[1.5px] px-2.5 py-1 rounded shadow-[0_0_12px_rgba(255,0,150,0.45)] z-30 select-none font-black flex items-center gap-1.5 cursor-default"
+            style={{ animation: 'neon-flicker-bar 4s infinite' }}
+          >
+            <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-ping"></span>
+            LIVE AREA HOST: FORSAKEN LOT BAR // SECTOR NC-552
+          </div>
+
+          {/* Toxic Smog clouds overlay */}
+          <div 
+            className="absolute -inset-10 pointer-events-none bg-radial-at-t from-[#22c55e]/5 via-[#eab308]/3 to-transparent z-15 mix-blend-screen opacity-70"
+            style={{ animation: 'smog-sway 10s ease-in-out infinite' }}
+          ></div>
+
+          {/* Steaming Vent plume loops */}
+          <div className="absolute top-[60%] left-[25%] pointer-events-none select-none z-22" style={{ animation: 'steam-rise 3s ease-out infinite' }}>
+            <div className="w-8 h-8 rounded-full bg-white/10 blur-md"></div>
+          </div>
+          <div className="absolute top-[35%] left-[65%] pointer-events-none select-none z-22" style={{ animation: 'steam-rise 4.2s ease-out infinite' }}>
+            <div className="w-10 h-10 rounded-full bg-white/10 blur-lg"></div>
+          </div>
+
+          {/* Red Alert Neon Hazard Indicator Rings */}
+          <div className="absolute top-[80%] left-[82%] pointer-events-none border border-red-500/25 w-16 h-8 rounded-full z-12 animate-pulse flex items-center justify-center">
+            <div className="border border-red-500/40 w-12 h-6 rounded-full animate-ping"></div>
+          </div>
+          <div className="absolute top-[20%] left-[12%] pointer-events-none border border-red-500/25 w-16 h-8 rounded-full z-12 animate-pulse flex items-center justify-center">
+            <div className="border border-red-500/40 w-12 h-6 rounded-full animate-ping"></div>
+          </div>
           
           {/* Active Measure Laser Overlay */}
           {distanceMeasureActive && distLine && (
@@ -675,7 +797,19 @@ export default function TacticalCombatMap({
           )}
 
           {/* Absolute Isometric Render Board container */}
-          <div className="relative" style={{ width: '820px', height: '410px' }}>
+          <div 
+            className="relative transform-gpu" 
+            style={{ 
+              width: '820px', 
+              height: '410px',
+              transform: viewPerspective === 'top-down'
+                ? 'scale(0.85) translate(40px, 30px)'
+                : `perspective(1000px) rotateX(${cameraAngleX}deg) rotateZ(${cameraAngleZ}deg) scale(0.95)`,
+              transformStyle: 'preserve-3d',
+              transition: isRotatingCamera ? 'none' : 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              transformOrigin: '410px 205px'
+            }}
+          >
             
             {/* Draw Isometric Grid Tiles first base matrix */}
             {Array.from({ length: gridHeight }).map((_, rIdx) => {

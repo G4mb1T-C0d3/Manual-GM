@@ -110,6 +110,7 @@ interface CombatTrackProps {
   currentGig?: any;
   manualNpcControl?: boolean;
   customObstacles?: MapObstacle[];
+  userRole?: 'gm' | 'player' | null;
 }
 
 export default function CombatTrack({
@@ -125,6 +126,7 @@ export default function CombatTrack({
   currentGig,
   manualNpcControl = false,
   customObstacles = [],
+  userRole = 'player',
 }: CombatTrackProps) {
   const [gmOverrideUnlocked, setGmOverrideUnlocked] = useState<boolean>(false);
 
@@ -165,6 +167,56 @@ export default function CombatTrack({
       setTargetCharId(liveEnemies[0].id);
     }
   }, [enemies]);
+
+  // Automated Zero-HP target pruning and system cleanup
+  useEffect(() => {
+    if (!combatActive) return;
+
+    // Check player HP
+    if (player.hp <= 0 && player.deployed !== false) {
+      const nextPlayer = { ...player, deployed: false, isDead: true };
+      const nextTurnOrder = turnOrder.filter(id => id !== player.id);
+      const nextTurnIndex = turnIndex >= nextTurnOrder.length ? 0 : turnIndex;
+      updateState({
+        player: nextPlayer,
+        turnOrder: nextTurnOrder,
+        turnIndex: nextTurnIndex,
+        logs: [
+          {
+            id: `flatline_player_${Date.now()}`,
+            timestamp: getGameTime(),
+            type: 'damage',
+            message: `[ALERT]: Player ${player.name} Flatlined / Removed from Grid Matrix`
+          },
+          ...logs
+        ]
+      });
+      audio.playAlert();
+    }
+
+    // Check NPC hostile HPs
+    const flatHostile = enemies.find(e => e.hp <= 0 && e.deployed !== false);
+    if (flatHostile) {
+      const nextEnemies = enemies.map(e => e.id === flatHostile.id ? { ...e, deployed: false, isDead: true } : e);
+      const nextTurnOrder = turnOrder.filter(id => id !== flatHostile.id);
+      const nextTurnIndex = turnIndex >= nextTurnOrder.length ? 0 : turnIndex;
+      updateState({
+        enemies: nextEnemies,
+        turnOrder: nextTurnOrder,
+        turnIndex: nextTurnIndex,
+        logs: [
+          {
+            id: `flatline_hostile_${flatHostile.id}_${Date.now()}`,
+            timestamp: getGameTime(),
+            type: 'damage',
+            message: `[ALERT]: Target ${flatHostile.name} Flatlined / Removed from Grid Matrix`
+          },
+          ...logs
+        ]
+      });
+      audio.playAlert();
+    }
+  }, [player.hp, enemies, combatActive, turnOrder, turnIndex, logs, updateState]);
 
   // Synchronize dynamic combat target range calculated from grid map positions
   useEffect(() => {
@@ -1233,7 +1285,7 @@ export default function CombatTrack({
         turnIndex={turnIndex}
         turnOrder={turnOrder}
         logs={logs}
-        gmOverrideActive={gmOverrideUnlocked}
+        gmOverrideActive={userRole === 'gm' && gmOverrideUnlocked}
         updateState={updateState}
         gridWidth={currentGig?.battleArenaLayout?.width || 10}
         gridHeight={currentGig?.battleArenaLayout?.height || 10}
@@ -1677,18 +1729,20 @@ export default function CombatTrack({
       </div>
 
       {/* Game Master Administrative Bypass Console */}
-      <GmAdministrativePanel
-        player={player}
-        enemies={enemies}
-        combatActive={combatActive}
-        turnOrder={turnOrder}
-        turnIndex={turnIndex}
-        logs={logs}
-        onUpdateFullState={updateState}
-        overrideUnlocked={gmOverrideUnlocked}
-        onOverrideCodeUnlocked={setGmOverrideUnlocked}
-        manualNpcControl={manualNpcControl}
-      />
+      {userRole === 'gm' && (
+        <GmAdministrativePanel
+          player={player}
+          enemies={enemies}
+          combatActive={combatActive}
+          turnOrder={turnOrder}
+          turnIndex={turnIndex}
+          logs={logs}
+          onUpdateFullState={updateState}
+          overrideUnlocked={gmOverrideUnlocked}
+          onOverrideCodeUnlocked={setGmOverrideUnlocked}
+          manualNpcControl={manualNpcControl}
+        />
+      )}
 
       {/* --- MODAL DIALOG: ACTIONS CHOOSED PANEL --- */}
       {activeActionModal && (

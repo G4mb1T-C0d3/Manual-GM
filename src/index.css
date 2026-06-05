@@ -96,3 +96,30 @@ body {
 .animate-spin-slow {
   animation: spin 8s linear infinite;
 }
+
+/* Visceral screen-shake for damage & cyber threats */
+@keyframes shake-extreme {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-2px, -2px) rotate(-1deg); }
+  20% { transform: translate(3px, 0px) rotate(1deg); }
+  30% { transform: translate(0px, 2px) rotate(0deg); }
+  45% { transform: translate(2px, -2px) rotate(1deg); }
+  60% { transform: translate(-3px, 1px) rotate(-1deg); }
+  75% { transform: translate(2px, 1px) rotate(1deg); }
+  90% { transform: translate(-1px, -2px) rotate(0deg); }
+}
+
+.animate-shake {
+  animation: shake-extreme 0.25s infinite;
+}
+
+@keyframes cyber-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+.cyber-matrix-green-code {
+  background: linear-gradient(rgba(57,255,20,0.01) 50%, rgba(57,255,20,0.08) 50%);
+  background-size: 100% 20px;
+  animation: cyber-flow 4s linear infinite;
+}
